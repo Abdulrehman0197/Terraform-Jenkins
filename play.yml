@@ -1,0 +1,420 @@
+
+- name: Solr Installation & Configurations
+  hosts: Terraform-SOLR
+  vars:
+    volume_name: "/dev/nvme1n1"
+    solr_heap_size: "4g"  # You can change this value as needed
+    solr_username: "solr"
+    solr_password: "SolrRocks"
+    core_schemas:
+      BP360Customer: BP360Customer-schema.xml
+      BPCustomer: BPCustomer-schema.xml
+      BPGeneral: BPGeneral-schema.xml
+      BPVendor: BPVendor-schema.xml
+      BillingManager: BillingManager-schema.xml
+      Contract: Contract-schema.xml
+      Interaction: Interaction-schema.xml
+      ServiceAddress: ServiceAddress-schema.xml
+      ServiceLocationGroup: SLG-Schema.xml
+      WorkOrder: WorkOrder-schema.xml
+  become: yes
+  tasks:
+    - name: Check if /data directory exists
+      stat:
+        path: /data
+      register: data_directory
+
+    - name: Create /data directory if it doesn't exist
+      file:
+        path: /data
+        state: directory
+      when: not data_directory.stat.exists
+
+    - name: Change to /data directory
+      shell: cd /data
+      register: cd_output
+      ignore_errors: no
+
+    - debug:
+        msg: "Changed to /data directory successfully"
+      when: cd_output is success
+
+    - name: Run lsblk command
+      shell: lsblk --noheadings --output NAME,MOUNTPOINT
+      register: lsblk_output
+
+    - name: Print lsblk output
+      debug:
+        msg: "{{ lsblk_output.stdout_lines }}"
+
+    - name: Check if volume is mounted
+      shell: |
+        lsblk -no MOUNTPOINT "{{ volume_name }}"
+      register: vol_mountpoint
+      ignore_errors: yes
+
+    - name: Debug output for the mountpoint check
+      debug:
+        msg: "vol_mountpoint.stdout: {{ vol_mountpoint.stdout }}"
+
+    - name: Print already mounted message
+      debug:
+        msg: "{{ volume_name }} is already mounted at {{ vol_mountpoint.stdout }}"
+      when: vol_mountpoint.stdout != ''
+
+    - name: Mount volume to /data
+      shell: sudo mount "{{ volume_name }}" /data
+
+    - name: Check if volume is mounted
+      shell: df -h | grep "{{ volume_name }}"
+      register: df_output
+      ignore_errors: yes
+
+    - debug:
+        msg: "{{ df_output.stdout }}"
+
+    - name: Run blkid command
+      command: blkid
+      register: blkid_output
+
+    - debug:
+        msg: "{{ blkid_output.stdout_lines }}"
+    
+    - name: Take the backup of /etc/fstab
+      shell: cp /etc/fstab /etc/fstab.orig
+      register: cp_output
+
+    - debug:
+        msg: "File copied successfully"
+      when: cp_output.rc == 0
+
+    - debug:
+        msg: "File copy failed with error: {{ cp_output.stderr }}"
+      when: cp_output.rc != 0
+
+    - name: Extract UUID of the specified volume
+      set_fact:
+        volume_uuid: "{{ blkid_output.stdout_lines | select('search', volume_name) | map('regex_replace', '^.*UUID=\"([^\"]+)\".*$', '\\1') | first }}"
+
+    - name: Debug extracted UUID
+      debug:
+        msg: "The UUID of {{ volume_name }} is {{ volume_uuid }}"
+
+    - name: Check if the UUID line is already present in /etc/fstab
+      shell: grep -q "UUID={{ volume_uuid }} /data ext4 defaults,nofail 0 2" /etc/fstab
+      register: grep_result
+      ignore_errors: true
+
+    - name: Add line to /etc/fstab if not present
+      lineinfile:
+        path: /etc/fstab
+        line: "UUID=\"{{ volume_uuid }}\"   /data   ext4    defaults,nofail 0 2"
+        state: present
+      when: grep_result.rc != 0
+
+    - name: Print message if line is already present
+      debug:
+        msg: "The line 'UUID={{ volume_uuid }}    /data   ext4    defaults,nofail 0 2' is already present in /etc/fstab"
+      when: grep_result.rc == 0
+
+    - name: Unmount /data
+      command: umount /data
+      ignore_errors: no
+
+    - name: Ensure volume is mounted on /data
+      shell: mount -a
+      ignore_errors: no
+
+    - name: Check if volume is mounted
+      shell: df -h | grep "{{ volume_name }}"
+      register: df_output
+      ignore_errors: yes
+
+    - name: Fail if volume is not mounted
+      fail:
+        msg: "Volume {{ volume_name }} is not mounted. Stopping the playbook execution."
+      when: df_output.rc != 0
+
+    - debug:
+        msg: "{{ df_output.stdout }}"
+
+    - name: Check if vm.swappiness is already set
+      shell: grep -q '^vm.swappiness=1$' /etc/sysctl.conf
+      register: grep_result
+      ignore_errors: true
+
+    - name: Add vm.swappiness=1 to /etc/sysctl.conf if not present
+      lineinfile:
+        path: /etc/sysctl.conf
+        line: "vm.swappiness=1"
+        insertafter: EOF
+        state: present
+      when: grep_result.rc != 0
+
+    - name: Print message if vm.swappiness=1 is already present
+      debug:
+        msg: "The line 'vm.swappiness=1' is already present in /etc/sysctl.conf"
+      when: grep_result.rc == 0
+
+    - name: Run sysctl -p
+      shell: sysctl -p
+
+    - name: Update all packages
+      shell: yum update -y
+      async: 6000
+      poll: 10
+      ignore_errors: no
+
+    - name: Change to /opt directory
+      shell: cd /opt
+      register: cd_output
+      ignore_errors: no
+
+    - debug:
+        msg: "Changed to /opt directory successfully"
+      when: cd_output is success
+
+    - name: Install Java
+      command: sudo yum install java-1.8.0-amazon-corretto -y
+      async: 1600
+      poll: 10
+      ignore_errors: no
+
+    - name: Verify Java installation
+      command: java -version
+      ignore_errors: no
+
+    - name: Install wget
+      command: yum install -y wget
+      async: 300
+      poll: 10
+      ignore_errors: no
+
+    - name: Download Solr 8.11.1 tarball
+      get_url:
+        url: https://archive.apache.org/dist/lucene/solr/8.11.1/solr-8.11.1.tgz
+        dest: /opt/solr-8.11.1.tgz
+        mode: '0777'
+        timeout: 1600
+      ignore_errors: no
+
+    - name: Download Solr 8.11.1 checksum
+      get_url:
+        url: https://downloads.apache.org/lucene/solr/8.11.1/solr-8.11.1.tgz.sha512
+        dest: /opt/solr-8.11.1.tgz.sha512
+        mode: '0777'
+        timeout: 600
+      ignore_errors: no
+
+    - name: Generate SHA512 checksum for solr-8.11.1.tgz
+      command: "gpg --print-md SHA512 /opt/solr-8.11.1.tgz"
+      register: gpg_output
+
+    - name: Read the provided SHA512 checksum from solr-8.11.1.tgz.sha512
+      command: "cat /opt/solr-8.11.1.tgz.sha512"
+      register: sha512_file
+
+    - name: Extract SHA512 checksum from gpg output
+      set_fact:
+        gpg_checksum: "{{ gpg_output.stdout.split(':')[1].replace(' ', '').replace('\n', '').lower() }}"
+
+    - name: Extract SHA512 checksum from file
+      set_fact:
+        file_checksum: "{{ sha512_file.stdout.split(' ')[0].lower() }}"
+
+    - name: Debug gpg checksum
+      debug:
+        msg: "GPG Checksum: {{ gpg_checksum }}"
+
+    - name: Debug file checksum
+      debug:
+        msg: "File Checksum: {{ file_checksum }}"
+
+    - name: Compare checksums
+      fail:
+        msg: "Checksums do not match! GPG: {{ gpg_checksum }} File: {{ file_checksum }}"
+      when: gpg_checksum != file_checksum
+
+    - name: Checksum verification success
+      debug:
+        msg: "Checksums match!"
+      when: gpg_checksum == file_checksum
+
+    - name: Change directory to /opt
+      command: cd /opt
+
+    - name: Extract install_solr_service.sh from tarball
+      command: tar xzf solr-8.11.1.tgz solr-8.11.1/bin/install_solr_service.sh --strip-components=2
+      args:
+        chdir: /opt
+      ignore_errors: no
+
+    - name: Run Solr installation script
+      command: bash /opt/install_solr_service.sh /opt/solr-8.11.1.tgz
+      ignore_errors: no
+
+    - name: Change to /data directory
+      shell: cd /data
+      ignore_errors: no
+
+    - name: Create Solr directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0777'
+      with_items:
+        - /data/solr
+        - /data/solr/logs
+        - /data/solr/data
+
+    - name: Take the backup of File
+      command: cp /etc/default/solr.in.sh /etc/default/solr.in.sh.bk
+      ignore_errors: no
+
+    - name: Ensure SOLR_HOME is set
+      lineinfile:
+        path: /etc/default/solr.in.sh
+        regexp: '^SOLR_HOME='
+        line: 'SOLR_HOME="/data/solr/data"'
+      ignore_errors: no
+
+    - name: Ensure SOLR_LOGS_DIR is set
+      lineinfile:
+        path: /etc/default/solr.in.sh
+        regexp: '^SOLR_LOGS_DIR='
+        line: 'SOLR_LOGS_DIR="/data/solr/logs"'
+      ignore_errors: no
+
+    - name: Ensure SOLR_HEAP is set
+      lineinfile:
+        path: /etc/default/solr.in.sh
+        regexp: '^SOLR_HEAP='
+        line: 'SOLR_HEAP="{{ solr_heap_size }}"'
+      ignore_errors: no
+
+    - name: Copy SOLR data and configuration files
+      shell: |
+        cp -r /var/solr/data/* /data/solr/data &&
+        cp /var/solr/log4j2.xml /data/solr/log4j2.xml &&
+        cp /var/solr/solr-8983.pid /data/solr/solr-8983.pid
+      ignore_errors: no
+
+    - name: Create security.json file with the specified content
+      copy:
+        dest: /data/solr/data/security.json
+        content: |
+          {
+             "authentication":{
+                "blockUnknown":true,
+                "class":"solr.BasicAuthPlugin",
+                "credentials":{
+                  "solr":"IV0EHq1OnNrj6gvRCwvFwTrZ1+z1oBbnQdiVC3otuq0= Ndd7LKvVBAaZIF0QAVi1ekCfAJXr1GGfLtRUXhgrF8c="
+                }
+             },
+             "authorization":{
+                "class":"solr.RuleBasedAuthorizationPlugin",
+                "permissions":[
+                   {
+                      "name":"security-edit",
+                      "role":"admin"
+                   }
+                ],
+                "user-role":{
+                  solr:"admin"
+                }
+             }
+          }
+        owner: root
+        group: root
+        mode: '0777'
+
+    - name: Add Solr authentication lines to solr.in.sh
+      blockinfile:
+        path: /etc/default/solr.in.sh
+        create: no
+        block: |
+          SOLR_AUTHENTICATION_CLIENT_BUILDER="org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory"
+          SOLR_AUTH_TYPE="basic"
+          SOLR_AUTHENTICATION_OPTS="-Dbasicauth={{ solr_username }}:{{ solr_password }}"
+
+    - name: Change ownership recursively of /data/ to solr:solr
+      become: yes
+      command: chown -R solr:solr /data/solr/
+
+    - name: Restart Solr service
+      service:
+        name: solr
+        state: restarted
+      ignore_errors: no
+
+    - name: Check if Git is installed
+      command: git --version
+      register: git_installed
+      ignore_errors: true
+
+    - name: Install Git if not installed
+      package:
+        name: git
+        state: present
+      when: git_installed.failed
+
+    - name: Clone the repository
+      git:
+        repo: 'https://x-token-auth:ATCTT3xFfGN0ywZf4cHVHqBNwkq8v_SHVyuviByawOD1t-Drr3VrLbMKhRDE5y8AwidBXmXpANjjqOtHCA_XXHLiuuI-Y1cWDh3HVA_UqlO_Mz8g3gaub1ZybRA1Ft_HYtmoDHK0b_0wZBIsOVOghljbVYE6BYLqLdSOyy7E_JJvjGgYpnDp3U4=48C2D7E7@bitbucket.org/isb-global/advancedsearch.git'
+        dest: /data/advancedsearch
+        version: main
+
+    - name: Go to /opt/solr directory
+      shell: cd /opt/solr
+      ignore_errors: no
+
+    - name: Create Solr core
+      shell: "sudo -u solr /opt/solr/bin/solr create_core -c {{ item }}"
+      loop:
+        - BP360Customer
+        - BPCustomer
+        - BPGeneral
+        - BPVendor
+        - BillingManager
+        - Contract
+        - Interaction
+        - ServiceAddress
+        - ServiceAgreementLine
+        - ServiceLocationGroup
+        - WorkOrder
+      ignore_errors: no
+
+    - name: Remove manage-schema file from each core conf directory
+      file:
+        path: "/data/solr/data/{{ item }}/conf/managed-schema"
+        state: absent
+      loop:
+        - BP360Customer
+        - BPCustomer
+        - BPGeneral
+        - BPVendor
+        - BillingManager
+        - Contract
+        - Interaction
+        - ServiceAddress
+        - ServiceAgreementLine
+        - ServiceLocationGroup
+        - WorkOrder
+
+    - name: Create symbolic links for each Core
+      shell: |
+        ln -s /data/advancedsearch/solr/schemas/{{ item.key }}/{{ item.value }} /data/solr/data/{{ item.key }}/conf/{{ item.value }}
+        ln -s /data/advancedsearch/solr/schemas/{{ item.key }}/managed-schema /data/solr/data/{{ item.key }}/conf/managed-schema
+      loop: "{{ core_schemas | dict2items }}"
+      args:
+        creates: "/data/solr/data/{{ item.key }}/conf/managed-schema"
+
+    - name: Create symbolic link for ServiceAgreementLine Core
+      shell: |
+        ln -s /data/advancedsearch/solr/schemas/ServiceAgreement/ServiceAgreement-schema.xml /data/solr/data/ServiceAgreementLine/conf/ServiceAgreement-schema.xml
+        ln -s /data/advancedsearch/solr/schemas/ServiceAgreement/managed-schema /data/solr/data/ServiceAgreementLine/conf/managed-schema
+
+
+
+
+
