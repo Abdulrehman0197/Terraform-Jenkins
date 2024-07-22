@@ -1,4 +1,5 @@
-t-2"
+variable "region" {
+	default = "eu-west-2"
 }
 variable "ami" {
 	default = "ami-026b2ae0ba2773e0a"
