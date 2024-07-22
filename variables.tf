@@ -42,7 +42,7 @@ variable "root_device_name" {
 }
 
 variable "vol_size" {
-	default = 1
+	default = 8
 }
 
 variable "volume_type" {
@@ -53,3 +53,6 @@ variable "ebs_device_name" {
 	default = "/dev/sdf"
 }
 
+variable "ebs_vol_name" {
+	default = "DEMO_EBS_VOL"
+}
