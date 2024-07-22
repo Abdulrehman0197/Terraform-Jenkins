@@ -47,7 +47,7 @@ pipeline {
             steps {
                 script {
                     // Fetch the outputs from Terraform
-                    def publicIp = sh(script: "cd terraform/ && terraform output -raw public_ip", returnStdout: true).trim()
+                    def publicIp = sh(script: "cd terraform/ && terraform output -raw aws_ec2_public_ips", returnStdout: true).trim()
                     def pemFilePath = sh(script: "cd terraform/ && terraform output -raw pem_file_path", returnStdout: true).trim()
                     def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
                     
