@@ -117,6 +117,9 @@ resource "aws_ebs_volume" "vol" {
   availability_zone = aws_instance.ec2-instance.availability_zone
   size              = var.vol_size
   type              = var.volume_type  # Specify the volume type as gp2 for DEMO
+  tags = {
+    Name = var.ebs_vol_name
+  }
 }
 
 resource "aws_volume_attachment" "vol_attachment" {
@@ -128,5 +131,10 @@ resource "aws_volume_attachment" "vol_attachment" {
 output "ebs_vol_details" {
         value = aws_ebs_volume.vol
 }
-
+output "pem_file_path" {
+  value = local_file.DEMO_Key.filename
+}
+output "instance_name" {
+  value = aws_instance.example.tags["Name"]
+}
 
