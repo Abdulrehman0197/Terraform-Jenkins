@@ -5,6 +5,7 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        SUDO_PASSWORD         = credentials('SUDO_PASSWORD_ID') // Add this line
     }
     agent any
     stages {
@@ -51,13 +52,10 @@ pipeline {
                     def pemFilePath = sh(script: "cd terraform/ && terraform output -raw pem_file_path", returnStdout: true).trim()
                     def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
                     
-                    // Change the permissions of the PEM file
-                    sh "chmod 400 /var/lib/jenkins/workspace/IAC-Jenkins/terraform/DEMO_KP"
-                    
                     // Format and write to /etc/ansible/hosts
                     sh """
-                        echo '[${instanceName}]' | sudo tee -a /etc/ansible/hosts
-                        echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/IAC-Jenkins/terraform/DEMO_KP' | sudo tee -a /etc/ansible/hosts
+                        echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '[${instanceName}]' >> /etc/ansible/hosts"
+                        echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/IAC-Jenkins/terraform/DEMO_KP' >> /etc/ansible/hosts"
                     """
                 }
             }
@@ -65,11 +63,12 @@ pipeline {
         stage('Format Disk and Execute Ansible Playbook') {
             steps {
                 script {
-                    // Run the mkfs command
-                    sh "sudo mkfs -t ext4 /dev/xvdf"
-                    
-                    // Execute the Ansible playbook
-                    sh "ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/IAC-Jenkins/terraform/play.yml"
+                    // Run the mkfs command with sudo password                  
+                    sh """
+                        echo '${SUDO_PASSWORD}' | sudo -S mkfs -t ext4 /dev/xvdf
+                        echo '${SUDO_PASSWORD}' | sudo -S chmod 400 ${pemFilePath}
+                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/IAC-Jenkins/terraform/play.yml
+                    """
                 }
             }
         }
