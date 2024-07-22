@@ -135,6 +135,6 @@ output "pem_file_path" {
   value = local_file.DEMO_Key.filename
 }
 output "instance_name" {
-  value = aws_instance.example.tags["Name"]
+  value = aws_instance.ec2-instance.tags["Name"]
 }
 
