@@ -66,7 +66,7 @@ pipeline {
                     // Run the mkfs command with sudo password                  
                     sh """
                         echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/IAC-Jenkins/terraform/DEMO_KP
-                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/IAC-Jenkins/terraform/play.yml
+                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/IAC-Jenkins/terraform/play.yml --start-task-at="Run Solr installation script"
                     """
                 }
             }
