@@ -55,7 +55,7 @@ pipeline {
                     // Format and write to /etc/ansible/hosts
                     sh """
                         echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '[${instanceName}]' >> /etc/ansible/hosts"
-                        echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/IAC-Script/terraform/DEMO_KP' >> /etc/ansible/hosts"
+                        echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TA/terraform/DEMO_KP' >> /etc/ansible/hosts"
                     """
                 }
             }
@@ -67,19 +67,19 @@ pipeline {
                     
                     // Change permissions
                     sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/IAC-Script/terraform/DEMO_KP
+                        echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TA/terraform/DEMO_KP
                     """
                     
                     // Format the disk
                     sh """
-                        ansible IAC-DEMO -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/xvdb" -b
+                        ansible TA-DEMO -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/xvdb" -b
                     """
 
                     
 
                     // Run ansible-playbook
                     sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/IAC-Script/terraform/play.yml
+                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TA/terraform/play.yml
                     """
                 }
             }
