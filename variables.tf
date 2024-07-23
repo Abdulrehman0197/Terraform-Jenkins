@@ -10,7 +10,7 @@ variable "instance_type" {
 }
 
 variable "instance_name" {
-	default = "Terraform-SOLR"
+	default = "IAC-DEMO"
 }
 
 variable "s_g_name" {
