@@ -69,7 +69,7 @@ pipeline {
 
                     // Format the disk
                     sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S mkfs -t ext4 /dev/sdb
+                        ansible IAC-DEMO -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/xvdf" -b
                     """
 
                     // Change permissions
