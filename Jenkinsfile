@@ -65,15 +65,15 @@ pipeline {
                 script {
                     def startAtTask = "Run Solr installation script"
                     
-                    // Change permissions
-                    sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TA/terraform/DEMO_KP
-                    """
+                    // // Change permissions
+                    // sh """
+                    //     echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TA/terraform/DEMO_KP
+                    // """
                     
-                    // Format the disk
-                    sh """
-                        ansible TA-DEMO -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/xvdb" -b
-                    """
+                    // // Format the disk
+                    // sh """
+                    //     ansible TA-DEMO -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/xvdb" -b
+                    // """
 
                     
 
