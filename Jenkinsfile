@@ -69,7 +69,7 @@ pipeline {
 
                     // Format the disk
                     sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S mkfs -t ext4 /dev/xvdf
+                        echo '${SUDO_PASSWORD}' | sudo -S mkfs -t ext4 /dev/sdb
                     """
 
                     // Change permissions
