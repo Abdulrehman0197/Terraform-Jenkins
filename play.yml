@@ -251,6 +251,7 @@
 
     - name: Run Solr installation script
       command: bash /opt/install_solr_service.sh /opt/solr-8.11.1.tgz
+      timeout: 3600
       ignore_errors: no
 
     - name: Change to /data directory
