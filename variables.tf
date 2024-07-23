@@ -42,15 +42,15 @@ variable "root_device_name" {
 }
 
 variable "vol_size" {
-	default = 8
+	default = 125
 }
 
 variable "volume_type" {
-	default = "gp2"
+	default = "st1"
 }
 
 variable "ebs_device_name" {
-	default = "/dev/sdf"
+	default = "/dev/sdb"
 }
 
 variable "ebs_vol_name" {
