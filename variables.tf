@@ -10,7 +10,7 @@ variable "instance_type" {
 }
 
 variable "instance_name" {
-	default = "IAC-DEMO"
+	default = "TA-DEMO"
 }
 
 variable "s_g_name" {
