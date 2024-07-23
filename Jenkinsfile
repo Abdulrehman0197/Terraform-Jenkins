@@ -55,7 +55,7 @@ pipeline {
                     // Format and write to /etc/ansible/hosts
                     sh """
                         echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '[${instanceName}]' >> /etc/ansible/hosts"
-                        echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/IAC-Jenkins/terraform/DEMO_KP' >> /etc/ansible/hosts"
+                        echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/IAC/terraform/DEMO_KP' >> /etc/ansible/hosts"
                     """
                 }
             }
@@ -64,10 +64,11 @@ pipeline {
             steps {
                 script {
                     def startAtTask = "Run Solr installation script"
-                    // Run the mkfs command with sudo password                  
+                    // Run the mkfs command with sudo password
                     sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/IAC-Jenkins/terraform/DEMO_KP
-                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/IAC-Jenkins/terraform/play.yml --start-at-task="${startAtTask}"
+                        echo '${SUDO_PASSWORD}' | sudo -S mkfs -t ext4 /dev/xvdf
+                        echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/IAC/terraform/DEMO_KP
+                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/IAC/terraform/play.yml
                     """
                 }
             }
