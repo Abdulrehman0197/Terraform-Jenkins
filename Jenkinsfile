@@ -64,18 +64,18 @@ pipeline {
             steps {
                 script {
                     def startAtTask = "Run Solr installation script"
-                    // Check device availability
-                    sh 'lsblk'
-
+                    
+                    // Change permissions
+                    sh """
+                        echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/IAC/terraform/DEMO_KP
+                    """
+                    
                     // Format the disk
                     sh """
                         ansible IAC-DEMO -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/xvdf" -b
                     """
 
-                    // Change permissions
-                    sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/IAC/terraform/DEMO_KP
-                    """
+                    
 
                     // Run ansible-playbook
                     sh """
