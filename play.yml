@@ -249,6 +249,9 @@
         chdir: /opt
       ignore_errors: no
 
+    - name: Run sysctl -p
+      shell: sysctl -p
+
     - name: List Solr installation script
       shell: ls -lrt
       ignore_errors: no
