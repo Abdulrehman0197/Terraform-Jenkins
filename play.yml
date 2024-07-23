@@ -2,8 +2,8 @@
 - name: Solr Installation & Configurations
   hosts: IAC-DEMO
   vars:
-    volume_name: "/dev/xvdf"
-    solr_heap_size: "1g"  # You can change this value as needed
+    volume_name: "/dev/nvme1n1"
+    solr_heap_size: "4g"  # You can change this value as needed
     solr_username: "solr"
     solr_password: "SolrRocks"
     core_schemas:
