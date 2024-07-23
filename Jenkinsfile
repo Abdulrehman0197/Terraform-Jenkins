@@ -79,7 +79,7 @@ pipeline {
 
                     // Run ansible-playbook
                     sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TA/terraform/play.yml
+                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TA/terraform/play.yml --start-at-task="${startAtTask}"
                     """
                 }
             }
