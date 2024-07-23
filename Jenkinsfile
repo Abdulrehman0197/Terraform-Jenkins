@@ -72,7 +72,7 @@ pipeline {
                     
                     // Format the disk
                     sh """
-                        ansible IAC-DEMO -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/nvme1n1" -b
+                        ansible IAC-DEMO -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/xvdb" -b
                     """
 
                     
