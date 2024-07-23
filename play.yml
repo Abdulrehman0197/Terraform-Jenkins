@@ -3,7 +3,7 @@
   hosts: IAC-DEMO
   vars:
     volume_name: "/dev/xvdb"
-    solr_heap_size: "4g"  # You can change this value as needed
+    solr_heap_size: "1g"  # You can change this value as needed
     solr_username: "solr"
     solr_password: "SolrRocks"
     core_schemas:
@@ -249,9 +249,13 @@
         chdir: /opt
       ignore_errors: no
 
+    - name: List Solr installation script
+      shell: ls -lrt
+      ignore_errors: no
+
     - name: Run Solr installation script
-      command: bash /opt/install_solr_service.sh /opt/solr-8.11.1.tgz
-      timeout: 3600
+      shell: sudo bash /opt/install_solr_service.sh /opt/solr-8.11.1.tgz
+      timeout: 1200
       ignore_errors: no
 
     - name: Change to /data directory
