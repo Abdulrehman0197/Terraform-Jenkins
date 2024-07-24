@@ -5,6 +5,8 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        REDIS_KEY_COMMAND_RUN = 'command_run'
+        REDIS_KEY_CHMOD_RUN = 'chmod_run'
         // SUDO_PASSWORD         = credentials('SUDO_PASSWORD_ID') // Add this line
     }
     agent any
@@ -75,7 +77,7 @@ pipeline {
 
                     if (chmodRun != 'true') {
                         echo "Running chmod command..."
-                        sh "sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/${INSTANCE_NAME}"
+                        sh "sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/${instanceName}"
                         sh "redis-cli SET ${REDIS_KEY_CHMOD_RUN} true"
                     } else {
                         echo "Chmod command already run. Skipping..."
