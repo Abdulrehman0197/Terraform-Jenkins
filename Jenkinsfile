@@ -69,31 +69,31 @@ pipeline {
                     def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
                     
                     // Change permissions
-                    sh """
-                        // sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP
-                        
-                        # Define the Redis keys and the commands
-                        REDIS_KEY_CHMOD_RUN="chmod_run"
-                        INSTANCE_NAME="\${instanceName}"  # Ensure instanceName is set appropriately
-                        CHMOD_COMMAND="sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/\${INSTANCE_NAME}"
-                        
-                        # Check if the chmod command has already run
-                        CHMOD_RUN=$(redis-cli GET $REDIS_KEY_CHMOD_RUN)
-                        
-                        if [ "$CHMOD_RUN" != "true" ]; then
-                            # Run the chmod command
-                            echo "Running chmod command..."
-                            eval $CHMOD_COMMAND
-                        
-                            # Set the Redis key to indicate the chmod command has run
-                            redis-cli SET $REDIS_KEY_CHMOD_RUN true
-                        else
-                            echo "Chmod command already run. Skipping..."
-                        fi
+                
+                    // sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP
+                    
+                    # Define the Redis keys and the commands
+                    REDIS_KEY_CHMOD_RUN="chmod_run"
+                    INSTANCE_NAME="\${instanceName}"  # Ensure instanceName is set appropriately
+                    CHMOD_COMMAND="sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/\${INSTANCE_NAME}"
+                    
+                    # Check if the chmod command has already run
+                    CHMOD_RUN=$(redis-cli GET $REDIS_KEY_CHMOD_RUN)
+                    
+                    if [ "$CHMOD_RUN" != "true" ]; then
+                        # Run the chmod command
+                        echo "Running chmod command..."
+                        eval $CHMOD_COMMAND
+                    
+                        # Set the Redis key to indicate the chmod command has run
+                        redis-cli SET $REDIS_KEY_CHMOD_RUN true
+                    else
+                        echo "Chmod command already run. Skipping..."
+                    fi
 
-                        
-                        // echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP
-                    """
+                    
+                    // echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP
+                   
                     
                     // Format the disk
                     // sh """
