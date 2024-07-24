@@ -10,7 +10,7 @@ variable "instance_type" {
 }
 
 variable "instance_name" {
-	default = "TA-DEMO"
+	default = "TA-Test"
 }
 
 variable "s_g_name" {
