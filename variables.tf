@@ -10,7 +10,7 @@ variable "instance_type" {
 }
 
 variable "instance_name" {
-	default = "TA-Test"
+	default = "TAS"
 }
 
 variable "s_g_name" {
@@ -42,15 +42,15 @@ variable "root_device_name" {
 }
 
 variable "vol_size" {
-	default = 125
+	default = 1
 }
 
 variable "volume_type" {
-	default = "st1"
+	default = "gp2"
 }
 
 variable "ebs_device_name" {
-	default = "/dev/sdb"
+	default = "/dev/sdf"
 }
 
 variable "ebs_vol_name" {
