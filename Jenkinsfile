@@ -62,7 +62,7 @@ pipeline {
                     def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
                     
                     // Check if the group already exists
-                    def checkGroup = sh(script: "grep -q '^\[${instanceName}\]' /etc/ansible/hosts || echo 'not found'", returnStdout: true).trim()
+                    def checkGroup = sh(script: "grep -q '^\\[${instanceName}\\]' /etc/ansible/hosts || echo 'not found'", returnStdout: true).trim()
         
                     if (checkGroup == 'not found') {
                         // If group not found, append to /etc/ansible/hosts
