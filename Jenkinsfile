@@ -5,9 +5,6 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
-        REDIS_KEY_COMMAND_RUN = 'command_run'
-        REDIS_KEY_CHMOD_RUN = 'chmod_run'
-        // SUDO_PASSWORD         = credentials('SUDO_PASSWORD_ID') // Add this line
     }
     agent any
     stages {
@@ -46,6 +43,15 @@ pipeline {
                 sh "pwd;cd terraform/ ; terraform apply -input=false tfplan"
             }
         }
+        stage('Change Permissions') {
+            steps {
+                script { 
+                    def pemFilePath = sh(script: "cd terraform/ && terraform output -raw pem_file_path", returnStdout: true).trim()
+                    // Change permissions
+                    sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/'${pemFilePath}' 
+                }
+            }
+        }
         stage('Update Ansible Hosts') {
             steps {
                 script {
@@ -62,26 +68,10 @@ pipeline {
                 }
             }
         }
-        stage('Change Permissions') {
+        stage('Run Ansible Playbook') {
             steps {
-                script {
-                    def startAtTask = "Run Solr installation script"
-                    def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
+                script {                   
                     
-                    // Change permissions
-                
-                    // sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP
-                    
-                    // Check if the chmod command has already run
-                    def chmodRun = sh(script: "redis-cli GET ${REDIS_KEY_CHMOD_RUN}", returnStdout: true).trim()
-
-                    if (chmodRun != 'true') {
-                        echo "Running chmod command..."
-                        sh "sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/${instanceName}"
-                        sh "redis-cli SET ${REDIS_KEY_CHMOD_RUN} true"
-                    } else {
-                        echo "Chmod command already run. Skipping..."
-                    }
                 }
             }
         }
