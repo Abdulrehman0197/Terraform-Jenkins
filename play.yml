@@ -1,6 +1,6 @@
 
 - name: Solr Installation & Configurations
-  hosts: TA-DEMO
+  hosts: TA-Test
   vars:
     volume_name: "/dev/xvdb"
     solr_heap_size: "0.5g"  # You can change this value as needed
