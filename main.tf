@@ -137,4 +137,7 @@ output "pem_file_path" {
 output "instance_name" {
   value = aws_instance.ec2-instance.tags["Name"]
 }
+output "ebs_device_name" {
+  value = aws_volume_attachment.vol_attachment.device_name
+}
 
