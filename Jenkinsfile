@@ -68,12 +68,6 @@ pipeline {
                 }
             }
         }
-        stage('Run Ansible Playbook') {
-            steps {
-                script {                   
-                    
-                }
-            }
-        }
+        
     }
 }
