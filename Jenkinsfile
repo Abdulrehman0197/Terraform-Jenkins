@@ -55,7 +55,7 @@ pipeline {
                     // Format and write to /etc/ansible/hosts
                     sh """
                         echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '[${instanceName}]' >> /etc/ansible/hosts"
-                        echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TA/terraform/DEMO_KP' >> /etc/ansible/hosts"
+                        echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TA-Script/terraform/DEMO_KP' >> /etc/ansible/hosts"
                     """
                 }
             }
@@ -67,7 +67,7 @@ pipeline {
                     
                     // // Change permissions
                     // sh """
-                    //     echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TA/terraform/DEMO_KP
+                    //     echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TA-Script/terraform/DEMO_KP
                     // """
                     
                     // // Format the disk
@@ -79,7 +79,7 @@ pipeline {
 
                     // Run ansible-playbook
                     sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TA/terraform/play.yml --start-at-task="${startAtTask}"
+                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TA-Script/terraform/play.yml
                     """
                 }
             }
