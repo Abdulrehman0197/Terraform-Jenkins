@@ -249,4 +249,170 @@
         chdir: /opt
       ignore_errors: no
 
+    - name: Run Solr installation script
+      shell: sudo bash /opt/install_solr_service.sh /opt/solr-8.11.1.tgz
+      timeout: 1200
+      ignore_errors: no
+
+    - name: Change to /data directory
+      shell: cd /data
+      ignore_errors: no
+
+    - name: Create Solr directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0777'
+      with_items:
+        - /data/solr
+        - /data/solr/logs
+        - /data/solr/data
+
+    - name: Take the backup of File
+      command: cp /etc/default/solr.in.sh /etc/default/solr.in.sh.bk
+      ignore_errors: no
+
+    - name: Ensure SOLR_HOME is set
+      lineinfile:
+        path: /etc/default/solr.in.sh
+        regexp: '^SOLR_HOME='
+        line: 'SOLR_HOME="/data/solr/data"'
+      ignore_errors: no
+
+    - name: Ensure SOLR_LOGS_DIR is set
+      lineinfile:
+        path: /etc/default/solr.in.sh
+        regexp: '^SOLR_LOGS_DIR='
+        line: 'SOLR_LOGS_DIR="/data/solr/logs"'
+      ignore_errors: no
+
+    - name: Ensure SOLR_HEAP is set
+      lineinfile:
+        path: /etc/default/solr.in.sh
+        regexp: '^SOLR_HEAP='
+        line: 'SOLR_HEAP="{{ solr_heap_size }}"'
+      ignore_errors: no
+
+    - name: Copy SOLR data and configuration files
+      shell: |
+        cp -r /var/solr/data/* /data/solr/data &&
+        cp /var/solr/log4j2.xml /data/solr/log4j2.xml &&
+        cp /var/solr/solr-8983.pid /data/solr/solr-8983.pid
+      ignore_errors: no
+
+    - name: Create security.json file with the specified content
+      copy:
+        dest: /data/solr/data/security.json
+        content: |
+          {
+             "authentication":{
+                "blockUnknown":true,
+                "class":"solr.BasicAuthPlugin",
+                "credentials":{
+                  "solr":"IV0EHq1OnNrj6gvRCwvFwTrZ1+z1oBbnQdiVC3otuq0= Ndd7LKvVBAaZIF0QAVi1ekCfAJXr1GGfLtRUXhgrF8c="
+                }
+             },
+             "authorization":{
+                "class":"solr.RuleBasedAuthorizationPlugin",
+                "permissions":[
+                   {
+                      "name":"security-edit",
+                      "role":"admin"
+                   }
+                ],
+                "user-role":{
+                  solr:"admin"
+                }
+             }
+          }
+        owner: root
+        group: root
+        mode: '0777'
+
+    - name: Add Solr authentication lines to solr.in.sh
+      blockinfile:
+        path: /etc/default/solr.in.sh
+        create: no
+        block: |
+          SOLR_AUTHENTICATION_CLIENT_BUILDER="org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory"
+          SOLR_AUTH_TYPE="basic"
+          SOLR_AUTHENTICATION_OPTS="-Dbasicauth={{ solr_username }}:{{ solr_password }}"
+
+    - name: Change ownership recursively of /data/ to solr:solr
+      become: yes
+      command: chown -R solr:solr /data/solr/
+
+    - name: Restart Solr service
+      service:
+        name: solr
+        state: restarted
+      ignore_errors: no
+
+    - name: Check if Git is installed
+      command: git --version
+      register: git_installed
+      ignore_errors: true
+
+    - name: Install Git if not installed
+      package:
+        name: git
+        state: present
+      when: git_installed.failed
+
+    - name: Clone the repository
+      git:
+        repo: 'https://x-token-auth:ATCTT3xFfGN0ywZf4cHVHqBNwkq8v_SHVyuviByawOD1t-Drr3VrLbMKhRDE5y8AwidBXmXpANjjqOtHCA_XXHLiuuI-Y1cWDh3HVA_UqlO_Mz8g3gaub1ZybRA1Ft_HYtmoDHK0b_0wZBIsOVOghljbVYE6BYLqLdSOyy7E_JJvjGgYpnDp3U4=48C2D7E7@bitbucket.org/isb-global/advancedsearch.git'
+        dest: /data/advancedsearch
+        version: main
+
+    - name: Go to /opt/solr directory
+      shell: cd /opt/solr
+      ignore_errors: no
+
+    - name: Create Solr core
+      shell: "sudo -u solr /opt/solr/bin/solr create_core -c {{ item }}"
+      loop:
+        - BP360Customer
+        - BPCustomer
+        - BPGeneral
+        - BPVendor
+        - BillingManager
+        - Contract
+        - Interaction
+        - ServiceAddress
+        - ServiceAgreementLine
+        - ServiceLocationGroup
+        - WorkOrder
+      ignore_errors: no
+
+    - name: Remove manage-schema file from each core conf directory
+      file:
+        path: "/data/solr/data/{{ item }}/conf/managed-schema"
+        state: absent
+      loop:
+        - BP360Customer
+        - BPCustomer
+        - BPGeneral
+        - BPVendor
+        - BillingManager
+        - Contract
+        - Interaction
+        - ServiceAddress
+        - ServiceAgreementLine
+        - ServiceLocationGroup
+        - WorkOrder
+
+    - name: Create symbolic links for each Core
+      shell: |
+        ln -s /data/advancedsearch/solr/schemas/{{ item.key }}/{{ item.value }} /data/solr/data/{{ item.key }}/conf/{{ item.value }}
+        ln -s /data/advancedsearch/solr/schemas/{{ item.key }}/managed-schema /data/solr/data/{{ item.key }}/conf/managed-schema
+      loop: "{{ core_schemas | dict2items }}"
+      args:
+        creates: "/data/solr/data/{{ item.key }}/conf/managed-schema"
+
+    - name: Create symbolic link for ServiceAgreementLine Core
+      shell: |
+        ln -s /data/advancedsearch/solr/schemas/ServiceAgreement/ServiceAgreement-schema.xml /data/solr/data/ServiceAgreementLine/conf/ServiceAgreement-schema.xml
+        ln -s /data/advancedsearch/solr/schemas/ServiceAgreement/managed-schema /data/solr/data/ServiceAgreementLine/conf/managed-schema
+
     
