@@ -52,6 +52,7 @@ pipeline {
                 }
             }
         }
+
         stage('Update Ansible Hosts') {
             steps {
                 script {
@@ -60,14 +61,18 @@ pipeline {
                     def pemFilePath = sh(script: "cd terraform/ && terraform output -raw pem_file_path", returnStdout: true).trim()
                     def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
                     
-                    // Format and write to /etc/ansible/hosts
-                    sh """
-                        echo '[${instanceName}]' | sudo tee -a /etc/ansible/hosts
-                        echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TAS-Jenkins/terraform/${pemFilePath}' | sudo tee -a /etc/ansible/hosts
-                    """
+                    // Check if the group already exists
+                    def checkGroup = sh(script: "grep -q '^\[${instanceName}\]' /etc/ansible/hosts || echo 'not found'", returnStdout: true).trim()
+        
+                    if (checkGroup == 'not found') {
+                        // If group not found, append to /etc/ansible/hosts
+                        sh """
+                            echo '[${instanceName}]' | sudo tee -a /etc/ansible/hosts
+                            echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TAS-Jenkins/terraform/${pemFilePath}' | sudo tee -a /etc/ansible/hosts
+                        """
+                    }
                 }
             }
-        }
-        
+        }        
     }
 }
