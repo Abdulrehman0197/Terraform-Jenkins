@@ -69,7 +69,8 @@ pipeline {
                     
                     // Change permissions
                     sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TA-Script/terraform/DEMO_KP
+                        sudo chmod 400 /var/lib/jenkins/workspace/TA-Script/terraform/DEMO_KP
+                        // echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TA-Script/terraform/DEMO_KP
                     """
                     
                     // Format the disk
@@ -81,7 +82,8 @@ pipeline {
 
                     // Run ansible-playbook
                     sh """
-                        echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TA-Script/terraform/play.yml
+                        sudo ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TA-Script/terraform/play.yml
+                        // echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TA-Script/terraform/play.yml
                     """
                 }
             }
