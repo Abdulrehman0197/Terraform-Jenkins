@@ -75,7 +75,7 @@ pipeline {
                         # Define the Redis keys and the commands
                         REDIS_KEY_CHMOD_RUN="chmod_run"
                         INSTANCE_NAME="${instanceName}"  # Ensure instanceName is set appropriately
-                        CHMOD_COMMAND="sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/'${INSTANCE_NAME}'"
+                        CHMOD_COMMAND="sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/${INSTANCE_NAME}"
                         
                         # Check if the chmod command has already run
                         CHMOD_RUN=$(redis-cli GET $REDIS_KEY_CHMOD_RUN)
