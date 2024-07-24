@@ -81,7 +81,7 @@ pipeline {
                         sh "redis-cli SET ${REDIS_KEY_CHMOD_RUN} true"
                     } else {
                         echo "Chmod command already run. Skipping..."
-
+                    }
                     
                     // echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP
                    
