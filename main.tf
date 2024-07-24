@@ -128,24 +128,6 @@ resource "aws_volume_attachment" "vol_attachment" {
   device_name    = var.ebs_device_name
 }
 
-resource "null_resource" "get_disk_name" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      lsblk -o NAME,SIZE | grep ${aws_ebs_volume.vol.size}G | awk '{print $1}'
-    EOT
-
-    environment = {
-      INSTANCE_ID = aws_instance.ec2-instance.id
-    }
-  }
-
-  depends_on = [aws_volume_attachment.vol_attachment]
-}
-
-output "disk_name" {
-  value = "${null_resource.get_disk_name.provisioners[0].local-exec.command}"
-}
-
 output "ebs_vol_details" {
         value = aws_ebs_volume.vol
 }
