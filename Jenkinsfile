@@ -71,7 +71,7 @@ pipeline {
                     // Change permissions
                     sh """
                         // sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP
-                        #!/bin/bash
+                        
                         # Define the Redis keys and the commands
                         REDIS_KEY_CHMOD_RUN="chmod_run"
                         INSTANCE_NAME="\${instanceName}"  # Ensure instanceName is set appropriately
