@@ -55,36 +55,78 @@ pipeline {
                     // Format and write to /etc/ansible/hosts
                     sh """
                         echo '[${instanceName}]' | sudo tee -a /etc/ansible/hosts
-                        echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TAS/terraform/DEMO_KP' | sudo tee -a /etc/ansible/hosts
+                        echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP' | sudo tee -a /etc/ansible/hosts
                         // echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '[${instanceName}]' >> /etc/ansible/hosts"
-                        // echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TAS/terraform/DEMO_KP' >> /etc/ansible/hosts"
+                        // echo '${SUDO_PASSWORD}' | sudo -S sh -c "echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP' >> /etc/ansible/hosts"
                     """
                 }
             }
         }
-        stage('Format Disk and Execute Ansible Playbook') {
+        stage('Change Permissions') {
             steps {
                 script {
                     def startAtTask = "Run Solr installation script"
+                    def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
                     
                     // Change permissions
                     sh """
-                        sudo chmod 400 /var/lib/jenkins/workspace/TAS/terraform/DEMO_KP
-                        // echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TAS/terraform/DEMO_KP
+                        // sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/'${instanceName}'
+                        #!/bin/bash
+                        # Define the Redis keys and the commands
+                        REDIS_KEY_CHMOD_RUN="chmod_run"
+                        INSTANCE_NAME="${instanceName}"  # Ensure instanceName is set appropriately
+                        CHMOD_COMMAND="sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/'${INSTANCE_NAME}'"
+                        
+                        # Check if the chmod command has already run
+                        CHMOD_RUN=$(redis-cli GET $REDIS_KEY_CHMOD_RUN)
+                        
+                        if [ "$CHMOD_RUN" != "true" ]; then
+                            # Run the chmod command
+                            echo "Running chmod command..."
+                            eval $CHMOD_COMMAND
+                        
+                            # Set the Redis key to indicate the chmod command has run
+                            redis-cli SET $REDIS_KEY_CHMOD_RUN true
+                        else
+                            echo "Chmod command already run. Skipping..."
+                        fi
+
+                        
+                        // echo '${SUDO_PASSWORD}' | sudo -S chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/DEMO_KP
                     """
                     
                     // Format the disk
-                    sh """
-                        ansible TAS -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/xvdb" -b
-                    """
+                    // sh """
+                    //     ansible '${instanceName}' -i /etc/ansible/hosts -m shell -a "sudo mkfs -t ext4 /dev/xvdb" -b
+
+                    //     #!/bin/bash
+                    //     # Define the Redis key and the Ansible command
+                    //     REDIS_KEY="command_run"
+                    //     INSTANCE_NAME="${instanceName}"  # Ensure instanceName is set appropriately
+                    //     ANSIBLE_COMMAND="ansible '${INSTANCE_NAME}' -i /etc/ansible/hosts -m shell -a 'sudo mkfs -t ext4 /dev/xvdb' -b"
+                        
+                    //     # Check if the command has already run
+                    //     COMMAND_RUN=$(redis-cli GET $REDIS_KEY)
+                        
+                    //     if [ "$COMMAND_RUN" != "true" ]; then
+                    //         # Run the Ansible command
+                    //         echo "Running Ansible command..."
+                    //         eval $ANSIBLE_COMMAND
+                        
+                    //         # Set the Redis key to indicate the command has run
+                    //         redis-cli SET $REDIS_KEY true
+                    //     else
+                    //         echo "Command already run. Skipping..."
+                    //     fi
+                    // """
 
                     
 
                     // Run ansible-playbook
-                    sh """
-                        sudo ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TAS/terraform/play.yml
-                        // echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TAS/terraform/play.yml
-                    """
+                    // sh """
+                    //     sudo ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TAS-Jenkins/terraform/play.yml
+                    //     // echo '${SUDO_PASSWORD}' | sudo -S ansible-playbook -i /etc/ansible/hosts /var/lib/jenkins/workspace/TAS-Jenkins/terraform/play.yml
+                    // """
                 }
             }
         }
