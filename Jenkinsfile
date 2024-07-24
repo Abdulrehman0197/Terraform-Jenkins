@@ -48,7 +48,7 @@ pipeline {
                 script { 
                     def pemFilePath = sh(script: "cd terraform/ && terraform output -raw pem_file_path", returnStdout: true).trim()
                     // Change permissions
-                    sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/'${pemFilePath}' 
+                    sh "sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/${pemFilePath}"
                 }
             }
         }
