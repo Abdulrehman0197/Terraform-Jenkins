@@ -78,20 +78,13 @@ pipeline {
                 }
             }
         }
-        stage('Format Disk') {
-            steps {
-                script {
-                    def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
-                    sh "ansible ${instanceName} -i /etc/ansible/hosts -m shell -a 'sudo mkfs -t ext4 /dev/nvme1n1' -b"
-                    
-                }
-            }
-        }
+        
         stage('Run Ansible Playbook') {
             steps {
-                script {                   
+                script {
+                    def startAtTask = "Your Task Name Here"  // Replace with the actual task name
                     sh """
-                        sudo ansible-playbook -i /etc/ansible/hosts terraform/play.yml
+                        sudo ansible-playbook -i /etc/ansible/hosts terraform/play.yml --start-at-task="${startAtTask}"
                     """
                 }
             }
