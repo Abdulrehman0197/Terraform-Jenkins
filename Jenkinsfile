@@ -47,7 +47,12 @@ pipeline {
             steps {
                 script {
                     def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
-                    def diskName = sh(script: 'lsblk -o NAME,SIZE -b | awk \'$2 == 125000000000 {print $1}\'', returnStdout: true).trim()
+                    def lsblkOutput = sh(script: 'lsblk -o NAME,SIZE -b', returnStdout: true).trim()
+                    echo "lsblk output: ${lsblkOutput}"
+
+                    // Parse the output to find the disk with 125G size
+                    def diskName = sh(script: 'echo "${lsblkOutput}" | awk \'$2 == 125000000000 {print $1}\'', returnStdout: true).trim()
+                    
                     
                     if (diskName) {
                         echo "Disk with 125GB size: ${diskName}"
