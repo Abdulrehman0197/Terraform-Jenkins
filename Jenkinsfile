@@ -82,7 +82,7 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 script {
-                    def startAtTask = "Your Task Name Here"  // Replace with the actual task name
+                    def startAtTask = "Restart Solr service"  // Replace with the actual task name
                     sh """
                         sudo ansible-playbook -i /etc/ansible/hosts terraform/play.yml --start-at-task="${startAtTask}"
                     """
