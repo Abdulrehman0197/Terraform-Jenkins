@@ -47,20 +47,8 @@ pipeline {
             steps {
                 script {
                     def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
-                    def lsblkOutput = sh(script: 'lsblk -o NAME,SIZE -b', returnStdout: true).trim()
-                    echo "lsblk output: ${lsblkOutput}"
-
-                    // Parse the output to find the disk with 125G size
-                    def diskName = sh(script: 'echo "${lsblkOutput}" | awk \'$2 == 125000000000 {print $1}\'', returnStdout: true).trim()
+                    sh "ansible ${instanceName} -i /etc/ansible/hosts -m shell -a 'sudo mkfs -t ext4 /dev/nvme1n1' -b"
                     
-                    
-                    if (diskName) {
-                        echo "Disk with 125GB size: ${diskName}"
-                        // Proceed with formatting the disk
-                        sh "ansible ${instanceName} -i /etc/ansible/hosts -m shell -a 'sudo mkfs -t ext4 /dev/${diskName}' -b"
-                    } else {
-                        error "No disk found with 125GB size"
-                    }
                 }
             }
         }
