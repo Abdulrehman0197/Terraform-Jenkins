@@ -2,15 +2,15 @@ variable "region" {
 	default = "eu-west-2"
 }
 variable "ami" {
-	default = "ami-026b2ae0ba2773e0a"
+	default = "ami-046d5130831576bbb"
 }
 
 variable "instance_type" {
-	default = "t2.micro"
+	default = "t3a.xlarge"
 }
 
 variable "instance_name" {
-	default = "TAS"
+	default = "IAC-Server"
 }
 
 variable "s_g_name" {
@@ -42,11 +42,11 @@ variable "root_device_name" {
 }
 
 variable "vol_size" {
-	default = 1
+	default = 125
 }
 
 variable "volume_type" {
-	default = "gp2"
+	default = "st1"
 }
 
 variable "ebs_device_name" {
