@@ -43,7 +43,7 @@ pipeline {
                 sh "pwd;cd terraform/ ; terraform apply -input=false tfplan"
             }
         }
-        stage('Run Ansible Playbook') {
+        stage('Format Disk') {
             steps {
                 script {
                     def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
@@ -64,7 +64,7 @@ pipeline {
                 script { 
                     def pemFilePath = sh(script: "cd terraform/ && terraform output -raw pem_file_path", returnStdout: true).trim()
                     // Change permissions
-                    sh "sudo chmod 400 /var/lib/jenkins/workspace/TAS-Jenkins/terraform/${pemFilePath}"
+                    sh "sudo chmod 400 /var/lib/jenkins/workspace/Final-IAC/terraform/${pemFilePath}"
                 }
             }
         }
@@ -79,7 +79,7 @@ pipeline {
         
                     // Check if the group exists and the specific line exists
                     def groupExists = sh(script: "grep -q '^\\[${instanceName}\\]' /etc/ansible/hosts && echo 'found' || echo 'not found'", returnStdout: true).trim()
-                    def lineExists = sh(script: "grep -q '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TAS-Jenkins/terraform/${pemFilePath}' /etc/ansible/hosts && echo 'found' || echo 'not found'", returnStdout: true).trim()
+                    def lineExists = sh(script: "grep -q '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/Final-IAC/terraform/${pemFilePath}' /etc/ansible/hosts && echo 'found' || echo 'not found'", returnStdout: true).trim()
         
                     if (groupExists == 'not found' || lineExists == 'not found') {
                         // If group not found or the specific line not found, append to /etc/ansible/hosts
@@ -88,7 +88,7 @@ pipeline {
                                 echo '[${instanceName}]' | sudo tee -a /etc/ansible/hosts
                             fi
                             if [ "${lineExists}" == "not found" ]; then
-                                echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/TAS-Jenkins/terraform/${pemFilePath}' | sudo tee -a /etc/ansible/hosts
+                                echo '${publicIp} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/var/lib/jenkins/workspace/Final-IAC/terraform/${pemFilePath}' | sudo tee -a /etc/ansible/hosts
                             fi
                         """
                     }
@@ -99,7 +99,7 @@ pipeline {
             steps {
                 script {                   
                     sh """
-                        sudo  
+                        sudo ansible-playbook -i /etc/ansible/hosts terraform/play.yml
                     """
                 }
             }
