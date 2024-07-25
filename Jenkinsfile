@@ -43,6 +43,22 @@ pipeline {
                 sh "pwd;cd terraform/ ; terraform apply -input=false tfplan"
             }
         }
+        stage('Run Ansible Playbook') {
+            steps {
+                script {
+                    def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
+                    def diskName = sh(script: "lsblk -o NAME,SIZE -b | awk '$2 == 125000000000 {print $1}'", returnStdout: true).trim()
+                    
+                    if (diskName) {
+                        echo "Disk with 125GB size: ${diskName}"
+                        // Proceed with formatting the disk
+                        sh "ansible ${instanceName} -i /etc/ansible/hosts -m shell -a 'sudo mkfs -t ext4 /dev/${diskName}' -b"
+                    } else {
+                        error "No disk found with 125GB size"
+                    }
+                }
+            }
+        }
         stage('Change Permissions') {
             steps {
                 script { 
@@ -78,6 +94,15 @@ pipeline {
                     }
                 }
             }
-        }        
+        }
+        stage('Run Ansible Playbook') {
+            steps {
+                script {                   
+                    sh """
+                        sudo  
+                    """
+                }
+            }
+        }
     }
 }
