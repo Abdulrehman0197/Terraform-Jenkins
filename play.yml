@@ -1,9 +1,9 @@
 
 - name: Solr Installation & Configurations
-  hosts: TA-Test
+  hosts: IAC-Server
   vars:
-    volume_name: "/dev/xvdb"
-    solr_heap_size: "0.5g"  # You can change this value as needed
+    volume_name: "/dev/nvme1n1"
+    solr_heap_size: "8g"  # You can change this value as needed
     solr_username: "solr"
     solr_password: "SolrRocks"
     core_schemas:
@@ -250,8 +250,9 @@
       ignore_errors: no
 
     - name: Run Solr installation script
-      shell: sudo bash /opt/install_solr_service.sh /opt/solr-8.11.1.tgz
-      timeout: 1200
+      become: yes
+      shell: bash /opt/install_solr_service.sh /opt/solr-8.11.1.tgz
+      timeout: 1600
       ignore_errors: no
 
     - name: Change to /data directory
