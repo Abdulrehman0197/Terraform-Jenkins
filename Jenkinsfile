@@ -43,25 +43,6 @@ pipeline {
                 sh "pwd;cd terraform/ ; terraform apply -input=false tfplan"
             }
         }
-        stage('Format Disk') {
-            steps {
-                script {
-                    def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
-                    sh "ansible ${instanceName} -i /etc/ansible/hosts -m shell -a 'sudo mkfs -t ext4 /dev/nvme1n1' -b"
-                    
-                }
-            }
-        }
-        stage('Change Permissions') {
-            steps {
-                script { 
-                    def pemFilePath = sh(script: "cd terraform/ && terraform output -raw pem_file_path", returnStdout: true).trim()
-                    // Change permissions
-                    sh "sudo chmod 400 /var/lib/jenkins/workspace/Final-IAC/terraform/${pemFilePath}"
-                }
-            }
-        }
-
         stage('Update Ansible Hosts') {
             steps {
                 script {
@@ -85,6 +66,24 @@ pipeline {
                             fi
                         """
                     }
+                }
+            }
+        }
+        stage('Format Disk') {
+            steps {
+                script {
+                    def instanceName = sh(script: "cd terraform/ && terraform output -raw instance_name", returnStdout: true).trim()
+                    sh "ansible ${instanceName} -i /etc/ansible/hosts -m shell -a 'sudo mkfs -t ext4 /dev/nvme1n1' -b"
+                    
+                }
+            }
+        }
+        stage('Change Permissions') {
+            steps {
+                script { 
+                    def pemFilePath = sh(script: "cd terraform/ && terraform output -raw pem_file_path", returnStdout: true).trim()
+                    // Change permissions
+                    sh "sudo chmod 400 /var/lib/jenkins/workspace/Final-IAC/terraform/${pemFilePath}"
                 }
             }
         }
