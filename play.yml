@@ -344,10 +344,8 @@
       command: chown -R solr:solr /data/solr/
 
     - name: Restart Solr service
-      service:
-        name: solr
-        state: restarted
-      ignore_errors: no
+      command: sudo service solr restart
+      ignore_errors: yes
 
     - name: Check if Git is installed
       command: git --version
