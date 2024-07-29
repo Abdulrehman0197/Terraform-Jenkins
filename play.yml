@@ -4,8 +4,8 @@
   vars:
     volume_name: "/dev/nvme1n1"
     solr_heap_size: "4g"  # You can change this value as needed
-    solr_username: "solr"
-    solr_password: "SolrRocks"
+    solr_username: ""
+    solr_password: ""
     core_schemas:
       BP360Customer: BP360Customer-schema.xml
       BPCustomer: BPCustomer-schema.xml
